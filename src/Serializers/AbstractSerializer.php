@@ -11,6 +11,7 @@ use Jad\Map\MapItem;
 use Jad\Exceptions\SerializerException;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Jad\Serializers\AbstractSerializer\MergedField;
+use Doctrine\Common\Util\ClassUtils;
 
 /**
  * Class AbstractSerializer
@@ -93,9 +94,11 @@ abstract class AbstractSerializer implements Serializer
      */
     public function getAttributes($entity, ?array $fields): array
     {
+        $entityClass = ClassUtils::getClass($entity);
+
         $cache = $this->mapper->getCache();
         $mapperCacheKey = $this->mapper->getCacheKey();
-        $cacheKey = $mapperCacheKey . '\\' . static::class . '=>' . get_class($entity) . '::' . md5(json_encode($fields));
+        $cacheKey = $mapperCacheKey . '\\' . static::class . '=>' . $entityClass . '::' . md5(json_encode($fields));
         $attributes = [];
 
         if ($cache instanceof CacheStorage && $cache->hasItem($cacheKey)) {
@@ -110,7 +113,7 @@ abstract class AbstractSerializer implements Serializer
             }
 
             $metaFields = $this->getMapItem()->getClassMeta()->getFieldNames();
-            $reflection = new \ReflectionClass(get_class($entity));
+            $reflection = new \ReflectionClass($entityClass);
             $classFields = array_keys($reflection->getDefaultProperties());
 
             $mergedFieldsList = array_unique(array_merge($metaFields, $classFields));
